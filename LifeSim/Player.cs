@@ -54,7 +54,7 @@ namespace LifeSim
                 int[] value = new int[attrCount];
                 for (int i = 0; i < attrCount; i++)
                 {
-                    Console.Write(Attributes[i].Name + " : ");
+                    Console.Write(Attributes[i].Name + "[%] : ");
                     value[i] = Int32.Parse(Console.ReadLine());
                     //Console.WriteLine();
                 }
@@ -73,8 +73,11 @@ namespace LifeSim
             if (index < 0 || index >= Quests.Count) return;
             if(Quests.Count == 0) return;
             int l = Attributes.Count;
-            for(int i = 0; i < l; i++)
-            Attributes[i].Value += Quests[index].Attributes[Attributes[i].Name];
+            for (int i = 0; i < l; i++)
+            {
+                Attributes[i].Value *= (Quests[index].Attributes[Attributes[i].Name]) / 100;
+                Attributes[i].Value += Level;
+            }
             Experience += Quests[index].Experience;
             while(Experience >= Target)
             {

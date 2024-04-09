@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -97,10 +98,18 @@ namespace LifeSim
                 Console.WriteLine("Quest name : " + q.Name);
                 Console.WriteLine("XP : " + q.Experience);
                 Console.WriteLine("-----Rewards------");
+                int max = 0;
+                foreach(string attrb in q.Attributes.Keys)
+                {
+                    if (attrb.Length > max) max = attrb.Length;
+                }
                 foreach(string attrb in q.Attributes.Keys)
                 {
                     if (q.Attributes[attrb] > 0)
-                        Console.WriteLine(attrb + " : " + q.Attributes[attrb]);
+                        Console.Write(attrb);
+                    for (int i = attrb.Length; i < max; i++)
+                        Console.Write(' ');
+                    Console.WriteLine(" : +" + q.Attributes[attrb] + "%");
                 }
                 Console.WriteLine("---------------------");
             }
