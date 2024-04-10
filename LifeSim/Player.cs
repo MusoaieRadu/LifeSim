@@ -63,8 +63,22 @@ namespace LifeSim
                 {
                     dict.Add(Attributes[i].Name, value[i]);
                 }
-                Console.Write("XP : ");
-                exp = Int32.Parse(Console.ReadLine());
+                Console.Clear();
+                Console.Write("Choose difficulty");
+                Thread.Sleep(2000);
+                Console.Clear();
+                int[] multiplier = { 1, 2, 4, 8 };
+                string[] options =
+                {
+                    "Easy",
+                    "Normal",
+                    "Hard",
+                    "Insane"
+                };
+                Menu difMenu = new Menu(options);
+                difMenu.Update();
+                int res = multiplier[difMenu.getResults()];
+                exp = Level*res*20;
                 Quests.Add(new Quest(name, dict, exp));
             }
         }
@@ -75,7 +89,7 @@ namespace LifeSim
             int l = Attributes.Count;
             for (int i = 0; i < l; i++)
             {
-                Attributes[i].Value *= (Quests[index].Attributes[Attributes[i].Name]) / 100;
+                Attributes[i].Value += Attributes[i].Value*(int)((float)(Quests[index].Attributes[Attributes[i].Name]) / 100f);
                 Attributes[i].Value += Level;
             }
             Experience += Quests[index].Experience;
@@ -83,7 +97,7 @@ namespace LifeSim
             {
                 Level++;
                 Experience -= Target;
-                Target += 25;
+                Target += 20*Level;
             }
             Quests.RemoveAt(index);
         }

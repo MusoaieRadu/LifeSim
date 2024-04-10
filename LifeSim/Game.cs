@@ -13,7 +13,7 @@ namespace LifeSim
     {
         Player player;
         ProgressBar playerBar;
-        private int barDivision = 100;
+        private int barDivision = 100, formatOffset;
         public Game() {
         }
         public void Start()
@@ -26,8 +26,9 @@ namespace LifeSim
                 CreateAccount();
             else Login();
         Console.Clear();
-        //Now we are at a point where the user has entered
-        //everything to proceed
+            //Now we are at a point where the user has entered
+            //everything to proceed
+        GetFormat();
         PlayerChoice();
     }
         private int Registration()
@@ -59,6 +60,15 @@ namespace LifeSim
             player = new Player(name);
             DataHandler.Save(player);
         }
+        private void GetFormat()
+        {
+            formatOffset = 0;
+            foreach (Quest attrb in player.Quests)
+            {
+                if(attrb.Name.Length > formatOffset)
+                    formatOffset = attrb.Name.Length;
+            }
+        }
         private void Login()
         {
             Console.Clear();
@@ -81,12 +91,14 @@ namespace LifeSim
         {
             Console.WriteLine("Name : " + player.Name);
             Console.WriteLine("Level : " + player.Level);
-            Console.WriteLine("---------------------------");
+            Console.WriteLine("----------------------------");
             for(int i = 0; i < player.Attributes.Count; i++)
             {
-                Console.WriteLine(player.Attributes[i].Name + " : " + player.Attributes[i].Value);
+                Console.Write(player.Attributes[i].Name);
+                for (int j = player.Attributes[i].Name.Length; j < formatOffset; j++) Console.Write(' ');
+                Console.WriteLine(" : " + player.Attributes[i].Value);
             }
-            Console.WriteLine("---------------------------");
+            Console.WriteLine("----------------------------");
             playerBar = new ProgressBar(player.Target, player.Experience, barDivision);
             Console.WriteLine("Experience : " + player.Experience + "/" + player.Target);
             playerBar.Display();
@@ -97,19 +109,16 @@ namespace LifeSim
             {
                 Console.WriteLine("Quest name : " + q.Name);
                 Console.WriteLine("XP : " + q.Experience);
-                Console.WriteLine("-----Rewards------");
-                int max = 0;
-                foreach(string attrb in q.Attributes.Keys)
-                {
-                    if (attrb.Length > max) max = attrb.Length;
-                }
+                Console.WriteLine("-------Rewards-------");
                 foreach(string attrb in q.Attributes.Keys)
                 {
                     if (q.Attributes[attrb] > 0)
+                    {
                         Console.Write(attrb);
-                    for (int i = attrb.Length; i < max; i++)
-                        Console.Write(' ');
-                    Console.WriteLine(" : +" + q.Attributes[attrb] + "%");
+                        for (int i = attrb.Length; i < formatOffset; i++)
+                            Console.Write(' ');
+                        Console.WriteLine(" : +" + q.Attributes[attrb] + "%");
+                    }
                 }
                 Console.WriteLine("---------------------");
             }
@@ -151,6 +160,7 @@ namespace LifeSim
             System.Environment.Exit(0);
         }
         public void PlayerChoice() {
+
             string[] src = new string[]
             {
                 "View character",
