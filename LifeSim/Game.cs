@@ -14,7 +14,8 @@ namespace LifeSim
         Player player;
         ProgressBar playerBar;
         private int barDivision = 100, formatOffset;
-        public Game() {
+        public Game()
+        {
         }
         public void Start()
         {
@@ -25,12 +26,12 @@ namespace LifeSim
             if (reg == 0)
                 CreateAccount();
             else Login();
-        Console.Clear();
+            Console.Clear();
             //Now we are at a point where the user has entered
             //everything to proceed
-        GetFormat();
-        PlayerChoice();
-    }
+            GetFormat();
+            PlayerChoice();
+        }
         private int Registration()
         {
             string[] s = new string[] {"Create new account",
@@ -47,13 +48,13 @@ namespace LifeSim
             Console.Write("Name : ");
             name = Console.ReadLine();
             filepath = name + ".json";
-            while(File.Exists(filepath))
+            while (File.Exists(filepath))
             {
                 Console.WriteLine("Account already exists!");
                 Thread.Sleep(1000);
                 Console.Clear();
                 Console.Write("Name : ");
-                if(Console.ReadKey().KeyChar == (char)ConsoleKey.Backspace) { Start(); return; }
+                if (Console.ReadKey().KeyChar == (char)ConsoleKey.Backspace) { Start(); return; }
                 name = Console.ReadLine();
                 filepath = name + ".json";
             }
@@ -63,9 +64,9 @@ namespace LifeSim
         private void GetFormat()
         {
             formatOffset = 0;
-            foreach (Quest attrb in player.Quests)
+            foreach (Attribute attrb in player.Attributes)
             {
-                if(attrb.Name.Length > formatOffset)
+                if (attrb.Name.Length > formatOffset)
                     formatOffset = attrb.Name.Length;
             }
         }
@@ -75,7 +76,7 @@ namespace LifeSim
             Console.Write("Username : ");
             string name = Console.ReadLine();
             string filepath = name + ".json";
-            while(!File.Exists(filepath))
+            while (!File.Exists(filepath))
             {
                 Console.WriteLine("Username doesn't exist.");
                 Thread.Sleep(1000);
@@ -86,13 +87,26 @@ namespace LifeSim
                 filepath = name + ".json";
             }
             player = Player.ReadPlayer(name);
+            foreach (HabitQuest h in player.HabitQuests)
+            {
+                if (h.LoggedDay != DateTime.Now.DayOfWeek)
+                    h.Completed = false;
+            }
+            for (int i = 0; i < player.DateQuests.Count; i++)
+            {
+                if (player.DateQuests[i].EndDate < DateTime.Now.Date)
+                {
+                    player.DateQuests.RemoveAt(i);
+                    i--;
+                }
+            }
         }
         private void PlayerData()
         {
             Console.WriteLine("Name : " + player.Name);
             Console.WriteLine("Level : " + player.Level);
             Console.WriteLine("----------------------------");
-            for(int i = 0; i < player.Attributes.Count; i++)
+            for (int i = 0; i < player.Attributes.Count; i++)
             {
                 Console.Write(player.Attributes[i].Name);
                 for (int j = player.Attributes[i].Name.Length; j < formatOffset; j++) Console.Write(' ');
@@ -105,28 +119,51 @@ namespace LifeSim
         }
         private void QuestData()
         {
-            foreach(Quest q in player.Quests)
+            foreach (DateQuest q in player.DateQuests)
             {
-                Console.WriteLine("Quest name : " + q.Name);
-                Console.WriteLine("XP : " + q.Experience);
-                Console.WriteLine("-------Rewards-------");
-                foreach(string attrb in q.Attributes.Keys)
+                if (DateTime.Now.Date >= q.StartDate.Date)
                 {
-                    if (q.Attributes[attrb] > 0)
+                    Console.WriteLine("Quest name : " + q.Name);
+                    Console.WriteLine("XP : " + q.Experience);
+                    Console.WriteLine("-------Rewards-------");
+                    foreach (string attrb in q.Attributes.Keys)
                     {
-                        Console.Write(attrb);
-                        for (int i = attrb.Length; i < formatOffset; i++)
-                            Console.Write(' ');
-                        Console.WriteLine(" : +" + q.Attributes[attrb] + "%");
+                        if (q.Attributes[attrb] > 0)
+                        {
+                            Console.Write(attrb);
+                            for (int i = attrb.Length; i < formatOffset; i++)
+                                Console.Write(' ');
+                            Console.WriteLine(" : +" + q.Attributes[attrb] + "%");
+                        }
                     }
+                    Console.WriteLine("---------------------");
                 }
-                Console.WriteLine("---------------------");
+            }
+            foreach (HabitQuest q in player.HabitQuests)
+            {
+                if (q.Days.Contains(DateTime.Now.DayOfWeek))
+                {
+                    Console.WriteLine("Quest name : " + q.Name);
+                    Console.WriteLine("XP : " + q.Experience);
+                    Console.WriteLine("-------Rewards-------");
+                    foreach (string attrb in q.Attributes.Keys)
+                    {
+                        if (q.Attributes[attrb] > 0)
+                        {
+                            Console.Write(attrb);
+                            for (int i = attrb.Length; i < formatOffset; i++)
+                                Console.Write(' ');
+                            Console.WriteLine(" : +" + q.Attributes[attrb] + "%");
+                        }
+                    }
+                    Console.WriteLine("---------------------");
+                }
             }
         }
         private void DisplayData(DisplayDelegate d)
         {
             char key = (char)0;
-            while(key != (char)ConsoleKey.Backspace)
+            while (key != (char)ConsoleKey.Backspace)
             {
                 d();
                 key = Console.ReadKey().KeyChar;
@@ -143,15 +180,28 @@ namespace LifeSim
         }
         private void HandleQuest(QuestDelegate q)
         {
-            if (player.GetQuests().Length > 0)
+            List<string> src = new List<string>();
+            if (player.GetDueQuests().Length > 0)
             {
-                Menu quests = new Menu(player.GetQuests());
+                int l = player.DateQuests.Count;
+                for (int i = 0; i < l; i++)
+                    src.Add(player.DateQuests[i].Name);
+            }
+            if (player.GetHabits().Length > 0)
+            {
+                    int l = player.HabitQuests.Count;
+                    for (int i = 0; i < l; i++)
+                    src.Add(player.HabitQuests[i].Name);
+            }
+            if (src.Count != 0)
+            {
+                Menu quests = new Menu(src.ToArray());
                 quests.Update();
                 int r = quests.getResults();
                 if (r == -1) { PlayerChoice(); return; }
                 q(r);
-                Console.Clear();
             }
+            Console.Clear();
             PlayerChoice();
         }
         private void Exit()
@@ -159,8 +209,9 @@ namespace LifeSim
             DataHandler.Save(player);
             System.Environment.Exit(0);
         }
-        public void PlayerChoice() {
-
+        public void PlayerChoice()
+        {
+            Console.Clear();
             string[] src = new string[]
             {
                 "View character",

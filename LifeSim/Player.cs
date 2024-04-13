@@ -5,15 +5,13 @@ using System.Text.Json;
 namespace LifeSim
 {
     [System.Serializable]
-    public class Player
+    public class Player : Character
     {
-        public string Name { get; set; }
-        public int Level { get; set; }
         public int Experience { get; set; }
         public int Target { get; set; }
 
-        public List<Attribute> Attributes { get; set; }
-        public List<Quest> Quests { get; set; }
+        public List<DateQuest> DateQuests { get; set; }
+        public List<HabitQuest> HabitQuests { get; set; }
         public Player(string name) {
             Name = name;
             Level = 1;
@@ -27,7 +25,8 @@ namespace LifeSim
                 new Attribute("Endurance"),
                 new Attribute("Charisma")
             };
-            Quests = new List<Quest>();
+            DateQuests = new List<DateQuest>();
+            HabitQuests = new List<HabitQuest>();
         }
         public Player() { 
             
@@ -65,7 +64,7 @@ namespace LifeSim
                 }
                 Console.Clear();
                 Console.Write("Choose difficulty");
-                Thread.Sleep(2000);
+                Thread.Sleep(1000);
                 Console.Clear();
                 int[] multiplier = { 1, 2, 4, 8 };
                 string[] options =
@@ -79,31 +78,129 @@ namespace LifeSim
                 difMenu.Update();
                 int res = multiplier[difMenu.getResults()];
                 exp = Level*res*20;
-                Quests.Add(new Quest(name, dict, exp));
+                Quest q = new Quest(name, dict, exp);
+                options = new string[]
+                {
+                    "Today's quest",
+                    "Due by quest",
+                    "Habit quest"
+                };
+                Console.Clear();
+                Console.WriteLine("Type of quest?");
+                Thread.Sleep(1000);
+                Console.Clear();
+                difMenu = new Menu(options);
+                difMenu.Update();
+                res = difMenu.getResults();
+                if (res == 0)
+                {
+                    DateTime now = DateTime.Now;
+                    DateQuest d = new DateQuest(q, now, now);
+                    DateQuests.Add(d);
+                }
+                else if(res == 1)
+                {
+                    int day, month, year;
+                    Console.Clear();
+                    Console.Write("Start day : ");
+                    day = Int32.Parse(Console.ReadLine());
+                    Console.Write("Start month : ");
+                    month = Int32.Parse(Console.ReadLine());
+                    Console.Write("Start year : ");
+                    year = Int32.Parse(Console.ReadLine());
+                    DateTime start = new DateTime(year, month, day);
+                    Console.WriteLine("---------------");
+                    Console.Write("Due day : ");
+                    day = Int32.Parse(Console.ReadLine());
+                    Console.Write("Due month : ");
+                    month = Int32.Parse(Console.ReadLine());
+                    Console.Write("Due year : ");
+                    year = Int32.Parse(Console.ReadLine());
+                    DateTime end = new DateTime(year, month, day);
+                    DateQuest d = new DateQuest(q, start, end);
+                    DateQuests.Add(d);
+                }
+                else
+                {
+                    Console.Clear();
+                    Console.WriteLine("Check the days!");
+                    Thread.Sleep(1500);
+                    Console.Clear();
+                    options = new string[]{
+                        "Sunday",
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                        "Saturday"
+                     };
+                    CheckBoxMenu check = new CheckBoxMenu(options);
+                    List<DayOfWeek> days = new List<DayOfWeek>();
+                    check.Update();
+                    int l = check.Checkbox.Length;
+                    for(int i = 0; i < l; i++)
+                    {
+                        if (check.Checkbox[i])
+                            days.Add((DayOfWeek)i);
+                    }
+                    HabitQuest h = new HabitQuest(q, days);
+                    HabitQuests.Add(h);
+                }
             }
         }
         public void FinishQuest(int index)
         {
-            if (index < 0 || index >= Quests.Count) return;
-            if(Quests.Count == 0) return;
             int l = Attributes.Count;
-            for (int i = 0; i < l; i++)
+            if (index < DateQuests.Count)
             {
-                Attributes[i].Value += Attributes[i].Value*(int)((float)(Quests[index].Attributes[Attributes[i].Name]) / 100f);
-                Attributes[i].Value += Level;
+                if (DateTime.Now.Date >= DateQuests[index].StartDate.Date)
+                {
+                    for (int i = 0; i < l; i++)
+                    {
+                        Attributes[i].Value += Attributes[i].Value * (int)((float)(DateQuests[index].Attributes[Attributes[i].Name]) / 100f);
+                        Attributes[i].Value += Level;
+                    }
+                    Experience += DateQuests[index].Experience;
+                    while (Experience >= Target)
+                    {
+                        Level++;
+                        Experience -= Target;
+                        Target += 20 * Level;
+                    }
+                    DateQuests.RemoveAt(index);
+                }
             }
-            Experience += Quests[index].Experience;
-            while(Experience >= Target)
+            else
             {
-                Level++;
-                Experience -= Target;
-                Target += 20*Level;
+                int off = DateQuests.Count;
+                bool ok = false;
+                foreach (DayOfWeek d in HabitQuests[index - off].Days)
+                    if (d == DateTime.Now.DayOfWeek) ok = true;
+                if (!HabitQuests[index - off].Completed && ok)
+                {
+                    for (int i = 0; i < l; i++)
+                    {
+                        Attributes[i].Value += Attributes[i].Value * (int)((float)(HabitQuests[index - off].Attributes[Attributes[i].Name]) / 100f);
+                        Attributes[i].Value += Level;
+                    }
+                    Experience += HabitQuests[index - off].Experience;
+                    while (Experience >= Target)
+                    {
+                        Level++;
+                        Experience -= Target;
+                        Target += 20 * Level;
+                    }
+                    HabitQuests[index - off].Completed = true;
+                    HabitQuests[index - off].LoggedDay = DateTime.Now.DayOfWeek;
+                }
             }
-            Quests.RemoveAt(index);
         }
         public void DeleteQuest(int index)
         {
-            Quests.RemoveAt(index);
+            if (index < 0 || index > HabitQuests.Count + DateQuests.Count) return;
+            if (index < DateQuests.Count) { DateQuests.RemoveAt(index); return; }
+            HabitQuests.RemoveAt(index - DateQuests.Count);
         }
         public string[] GetAttributes()
         {
@@ -113,12 +210,20 @@ namespace LifeSim
                 res[i] = Attributes[i].Name;
             return res;
         }
-        public string[] GetQuests()
+        public string[] GetHabits()
         {
-            int l = Quests.Count;
+            int l = HabitQuests.Count;
             string[] res = new string[l];
             for(int i = 0; i < l; i++)
-                res[i] = Quests[i].Name;
+                res[i] = HabitQuests[i].Name;
+            return res;
+        }
+        public string[] GetDueQuests()
+        {
+            int l = DateQuests.Count;
+            string[] res = new string[l];
+            for (int i = 0; i < l; i++)
+                res[i] = DateQuests[i].Name;
             return res;
         }
     }
