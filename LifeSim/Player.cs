@@ -12,6 +12,8 @@ namespace LifeSim
 
         public List<DateQuest> DateQuests { get; set; }
         public List<HabitQuest> HabitQuests { get; set; }
+        private int[] multiplier = { 1, 2, 4, 8 };
+        private int[] MAIN_multiplier = { 4, 8, 12, 18 };
         public Player(string name) {
             Name = name;
             Level = 1;
@@ -66,7 +68,6 @@ namespace LifeSim
                 Console.Write("Choose difficulty");
                 Thread.Sleep(1000);
                 Console.Clear();
-                int[] multiplier = { 1, 2, 4, 8 };
                 string[] options =
                 {
                     "Easy",
@@ -76,9 +77,7 @@ namespace LifeSim
                 };
                 Menu difMenu = new Menu(options);
                 difMenu.Update();
-                int res = multiplier[difMenu.getResults()];
-                exp = Level*res*20;
-                Quest q = new Quest(name, dict, exp);
+                int res = difMenu.getResults();
                 options = new string[]
                 {
                     "Today's quest",
@@ -91,14 +90,17 @@ namespace LifeSim
                 Console.Clear();
                 difMenu = new Menu(options);
                 difMenu.Update();
-                res = difMenu.getResults();
-                if (res == 0)
+                int c = difMenu.getResults();
+                Quest q;
+                if (c == 0)
                 {
+                    exp = Level * multiplier[res] * 20;
+                    q = new Quest(name, dict, exp);
                     DateTime now = DateTime.Now;
                     DateQuest d = new DateQuest(q, now, now);
                     DateQuests.Add(d);
                 }
-                else if(res == 1)
+                else if(c == 1)
                 {
                     int day, month, year;
                     Console.Clear();
@@ -117,6 +119,8 @@ namespace LifeSim
                     Console.Write("Due year : ");
                     year = Int32.Parse(Console.ReadLine());
                     DateTime end = new DateTime(year, month, day);
+                    exp = 20 * Level * MAIN_multiplier[res];
+                    q = new Quest(name, dict, exp);
                     DateQuest d = new DateQuest(q, start, end);
                     DateQuests.Add(d);
                 }
@@ -144,6 +148,8 @@ namespace LifeSim
                         if (check.Checkbox[i])
                             days.Add((DayOfWeek)i);
                     }
+                    exp = 20 * Level * multiplier[res];
+                    q = new Quest(name, dict, exp);
                     HabitQuest h = new HabitQuest(q, days);
                     HabitQuests.Add(h);
                 }
@@ -193,7 +199,13 @@ namespace LifeSim
                     }
                     HabitQuests[index - off].Completed = true;
                     HabitQuests[index - off].LoggedDay = DateTime.Now.DayOfWeek;
+                    int val = HabitQuests[index - off].Experience;
+                    HabitQuests[index - off].Experience += (int)(val * 0.05);
                 }
+            }
+            foreach(DateQuest q in DateQuests)
+            {
+                q.Experience += (int)(q.Experience * 0.05);
             }
         }
         public void DeleteQuest(int index)
@@ -225,6 +237,49 @@ namespace LifeSim
             for (int i = 0; i < l; i++)
                 res[i] = DateQuests[i].Name;
             return res;
+        }
+        public void DisplayHabits()
+        {
+            string[] options = new string[]{
+                        "Sunday",
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                        "Saturday"
+                     };
+            List<string>[] schedule = new List<string>[7];
+            for (int i = 0; i < 7; i++)
+                schedule[i] = new List<string>();
+            foreach(HabitQuest h in HabitQuests)
+            {
+                foreach (DayOfWeek day in h.Days)
+                    schedule[(int)day].Add(h.Name);
+            }
+            int l = 20, l1, l2;
+            for(int i = 0; i < 7; i++)
+            {
+                l1 = options[i].Length;
+                l2 = ((l - l1 + 2) / 2) - 1;
+                for (int k = 0; k < l; k++)
+                    Console.Write('-');
+                Console.WriteLine();
+                Console.Write('|');
+                for (int k = 0; k < l2-1; k++)
+                    Console.Write(' ');
+                Console.Write(options[i]);
+                for (int k = 0; k < l2; k++)
+                    Console.Write(' ');
+                Console.WriteLine('|');
+                for (int k = 0; k < l; k++)
+                    Console.Write('-');
+                Console.WriteLine();
+                foreach (string s in schedule[i])
+                {
+                    Console.WriteLine(s);
+                }
+            }
         }
     }
 }

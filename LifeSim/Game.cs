@@ -119,9 +119,10 @@ namespace LifeSim
         }
         private void QuestData()
         {
-            foreach (DateQuest q in player.DateQuests)
+            Console.WriteLine("--------TODAYS QUESTS---------");
+            foreach (HabitQuest q in player.HabitQuests)
             {
-                if (DateTime.Now.Date >= q.StartDate.Date)
+                if (q.Days.Contains(DateTime.Now.DayOfWeek) && !q.Completed)
                 {
                     Console.WriteLine("Quest name : " + q.Name);
                     Console.WriteLine("XP : " + q.Experience);
@@ -139,11 +140,13 @@ namespace LifeSim
                     Console.WriteLine("---------------------");
                 }
             }
-            foreach (HabitQuest q in player.HabitQuests)
+            Console.WriteLine("---------MAIN QUESTS------------");
+            foreach (DateQuest q in player.DateQuests)
             {
-                if (q.Days.Contains(DateTime.Now.DayOfWeek))
+                if (DateTime.Now.Date >= q.StartDate.Date)
                 {
                     Console.WriteLine("Quest name : " + q.Name);
+                    Console.WriteLine("Ends : " + q.EndDate.Day + "/" + q.EndDate.Month + "/" + q.EndDate.Year);
                     Console.WriteLine("XP : " + q.Experience);
                     Console.WriteLine("-------Rewards-------");
                     foreach (string attrb in q.Attributes.Keys)
@@ -216,6 +219,7 @@ namespace LifeSim
             {
                 "View character",
                 "View quests",
+                "View scheduled habits",
                 "Add quest",
                 "Finish quest",
                 "Quit quest",
@@ -229,10 +233,11 @@ namespace LifeSim
             {
                 case 0: DisplayData(PlayerData); break;
                 case 1: DisplayData(QuestData); break;
-                case 2: AddQuest(); break;
-                case 3: HandleQuest(player.FinishQuest); break;
-                case 4: HandleQuest(player.DeleteQuest); break;
-                case 5: Exit(); break;
+                case 2: DisplayData(player.DisplayHabits); break;
+                case 3: AddQuest(); break;
+                case 4: HandleQuest(player.FinishQuest); break;
+                case 5: HandleQuest(player.DeleteQuest); break;
+                case 6: Exit(); break;
                 case -1: Start(); break;
             }
         }
